@@ -12,6 +12,7 @@ import (
 )
 
 func main() {
+	// gin.SetMode(gin.ReleaseMode)
 	dsn := "host=localhost user=staging password=P@ssw0rd dbname=crawfounding port=5432 sslmode=disable TimeZone=Asia/Jakarta"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -28,6 +29,7 @@ func main() {
 	api := router.Group("/api/v1")
 
 	api.POST("/users", userHandler.RegisterUser)
+	api.POST("/sessions", userHandler.Login)
 
 	router.Run()
 
