@@ -1,30 +1,39 @@
 package main
 
 import (
+	"crowdfunding/handler"
+	"crowdfunding/user"
 	"fmt"
+	"log"
 
+	"github.com/gin-gonic/gin"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 func main() {
-	dsn := "host=localhost user=postgres password= dbname=crowdfunding port=5432 sslmode=disable TimeZone=Asia/Jakarta"
+	dsn := "host=localhost user=staging password=P@ssw0rd dbname=crawfounding port=5432 sslmode=disable TimeZone=Asia/Jakarta"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		panic("failed to connect database")
-	}
-	// Use db here
-	// Get generic database object sql.DB to check the connection
-	sqlDB, err := db.DB()
-	if err != nil {
-		panic("failed to get database instance")
+		log.Fatal("failed to connect database")
 	}
 
-	// Ping the database to verify connection
-	err = sqlDB.Ping()
-	if err != nil {
-		panic("failed to ping database")
-	}
+	fmt.Println("Connected to database!")
 
-	fmt.Println("Successfully connected to the database!")
+	userRepository := user.NewRepository(db)
+	userService := user.NewService(userRepository)
+	userHandler := handler.NewUserHandler(userService)
+
+	router := gin.Default()
+	api := router.Group("/api/v1")
+
+	api.POST("/users", userHandler.RegisterUser)
+
+	router.Run()
+
+	// input dari user
+	// handler, mapping input dari user -> struct input
+	// service : melakukan mapping dari struct input ke struct user
+	// repository : simpan ke database
+	// database : simpan ke database
 }
