@@ -1,5 +1,5 @@
 # crowdfunding
-Aplikasi Crowdfunding adalah metode penggalangan dana yang melibatkan kontribusi dari banyak individu untuk mendanai proyek, usaha, atau tujuan tertentu.
+Aplikasi Crowdfunding adalah aplikasi web penggalangan dana yang melibatkan kontribusi dari banyak individu untuk mendanai proyek, usaha, atau tujuan tertentu.
 
     Aplikasi crowdfunding ini dibangun menggunakan stack 
     1.  Golang pada sisi backend
