@@ -13,7 +13,7 @@ import (
 
 func main() {
 	// gin.SetMode(gin.ReleaseMode)
-	dsn := "host=localhost user=staging password=P@ssw0rd dbname=crawfounding port=5432 sslmode=disable TimeZone=Asia/Jakarta"
+	dsn := "host=localhost user=developer password=developer123 dbname=crawfounding port=5432 sslmode=disable TimeZone=Asia/Jakarta"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal("failed to connect database")
@@ -30,6 +30,8 @@ func main() {
 
 	api.POST("/users", userHandler.RegisterUser)
 	api.POST("/sessions", userHandler.Login)
+	api.POST("/email_checkers", userHandler.CheckEmailAvailability)
+	api.POST("/avatars", userHandler.UploadAvatar)
 
 	router.Run()
 

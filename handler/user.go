@@ -3,7 +3,14 @@ package handler
 import (
 	"crowdfunding/helper"
 	"crowdfunding/user"
+	"crypto/rand"
+	"encoding/hex"
+	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -112,5 +119,98 @@ func (h *userHandler) CheckEmailAvailability(c *gin.Context) {
 		metaMessage = "Email is available"
 	}
 	response := helper.APIResponse(metaMessage, http.StatusOK, "success", data)
+	c.JSON(http.StatusOK, response)
+}
+
+func generateRandomString(n int) string {
+	bytes := make([]byte, n)
+	rand.Read(bytes)
+	return hex.EncodeToString(bytes)
+}
+
+func (h *userHandler) UploadAvatar(c *gin.Context) {
+	// user mengupload avatar lewat http multipart form-data
+	// handler menerima file dari user
+	// handler memvalidasi file yang diupload
+	// handler memanggil service untuk menyimpan file ke storage
+	// handler memanggil service untuk update user dengan avatar yang baru
+	// handler mengembalikan response ke user
+
+	file, err := c.FormFile("avatar")
+	if err != nil {
+		response := helper.APIResponse("Failed to upload avatar image", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	// get file extension and validate
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	allowedExts := map[string]bool{
+		".jpg":  true,
+		".jpeg": true,
+		".png":  true,
+		".gif":  true,
+	}
+
+	if !allowedExts[ext] {
+		data := gin.H{"is_uploaded": false}
+		response := helper.APIResponse("Invalid file format. Only JPG, JPEG, PNG and GIF are allowed", http.StatusBadRequest, "error", data)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	// validation file image upload size = 1 MB = 1024 * 1024 bytes
+	if file.Size > 1024*1024 {
+		data := gin.H{"is_uploaded": false}
+		response := helper.APIResponse("Avatar image is too large", http.StatusBadRequest, "error", data)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	userID := 1 // ambil dari token jwt
+	// Get current avatar path
+	currentUser, err := h.userService.GetUserByID(userID)
+
+	// generate random file name
+	randomFileName := generateRandomString(10)
+	newFilename := fmt.Sprintf("%d_%s%d%s", userID, randomFileName, time.Now().Unix(), ext)
+
+	// Ensure images directory exists
+	if err := os.MkdirAll("images", 0755); err != nil {
+		data := gin.H{"is_uploaded": false}
+		response := helper.APIResponse("Failed to create upload directory", http.StatusBadRequest, "error", data)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	// Delete old avatar file if exists
+	if err == nil && currentUser.AvatarFileName != "" {
+		oldAvatarPath := filepath.Join(currentUser.AvatarFileName)
+		fmt.Println("Deleting old avatar:", oldAvatarPath)
+		if _, err := os.Stat(oldAvatarPath); err == nil {
+			os.Remove(oldAvatarPath)
+		}
+	}
+
+	// Save new Avatar file
+	path := filepath.Join("images", newFilename)
+	err = c.SaveUploadedFile(file, path)
+	if err != nil {
+		data := gin.H{"is_uploaded": false}
+		response := helper.APIResponse("Failed to upload avatar image", http.StatusBadRequest, "error", data)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	_, err = h.userService.SaveAvatar(userID, path)
+	if err != nil {
+		data := gin.H{"is_uploaded": false}
+		response := helper.APIResponse("Failed to upload avatar image", http.StatusBadRequest, "error", data)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	data := gin.H{"is_uploaded": true}
+	response := helper.APIResponse("Avatar successfuly uploaded", http.StatusOK, "success", data)
 	c.JSON(http.StatusOK, response)
 }
