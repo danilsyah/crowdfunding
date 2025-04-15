@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crowdfunding/auth"
 	"crowdfunding/handler"
 	"crowdfunding/user"
 	"fmt"
@@ -21,9 +22,15 @@ func main() {
 
 	fmt.Println("Connected to database!")
 
+	// repository
 	userRepository := user.NewRepository(db)
+
+	// service
 	userService := user.NewService(userRepository)
-	userHandler := handler.NewUserHandler(userService)
+	authService := auth.NewJWTService()
+
+	// handler
+	userHandler := handler.NewUserHandler(userService, authService)
 
 	router := gin.Default()
 	api := router.Group("/api/v1")

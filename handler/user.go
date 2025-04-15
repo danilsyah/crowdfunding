@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"crowdfunding/auth"
 	"crowdfunding/helper"
 	"crowdfunding/user"
 	"crypto/rand"
@@ -15,12 +16,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// userHandler adalah struct untuk handler user
+// userHandler memiliki field userService yang bertipe user.Service
 type userHandler struct {
 	userService user.Service
+	authService auth.Service
 }
 
-func NewUserHandler(userService user.Service) *userHandler {
-	return &userHandler{userService}
+// NewUserHandler adalah constructor untuk userHandler
+// NewUserHandler menerima parameter userService yang bertipe user.Service
+func NewUserHandler(userService user.Service, authService auth.Service) *userHandler {
+	return &userHandler{userService, authService}
 }
 
 // RegisterUser adalah handler untuk register user
@@ -48,12 +54,22 @@ func (h *userHandler) RegisterUser(c *gin.Context) {
 		return
 	}
 
-	formatter := user.FormatUser(newUser, "tokentokentokentoken")
+	// generate token
+	token, err := h.authService.GenerateToken(newUser.ID)
+	if err != nil {
+		response := helper.APIResponse("Failed to register account", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	formatter := user.FormatUser(newUser, token)
 	response := helper.APIResponse("Account has been registered", http.StatusOK, "success", formatter)
 
 	c.JSON(http.StatusOK, response)
 }
 
+// Login adalah handler untuk login user
+// @Summary Login User
 func (h *userHandler) Login(c *gin.Context) {
 	// user memasukan input email dan password
 	// input ditangkap handler
@@ -81,12 +97,22 @@ func (h *userHandler) Login(c *gin.Context) {
 		return
 	}
 
-	formatter := user.FormatUser(loggedinUser, "tokentokentokentoken")
+	// generate token
+	token, err := h.authService.GenerateToken(loggedinUser.ID)
+	if err != nil {
+		response := helper.APIResponse("Failed to login", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	formatter := user.FormatUser(loggedinUser, token)
 	response := helper.APIResponse("Successfully logged in", http.StatusOK, "success", formatter)
 	c.JSON(http.StatusOK, response)
 
 }
 
+// CheckEmailAvailability adalah handler untuk mengecek ketersediaan email
+// @Summary Check Email Availability
 func (h *userHandler) CheckEmailAvailability(c *gin.Context) {
 	// ada input email dari user
 	// input email di-mapping ke struct
@@ -122,12 +148,16 @@ func (h *userHandler) CheckEmailAvailability(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// generateRandomString adalah fungsi untuk generate random string
+// dengan panjang n karakter
 func generateRandomString(n int) string {
 	bytes := make([]byte, n)
 	rand.Read(bytes)
 	return hex.EncodeToString(bytes)
 }
 
+// UploadAvatar adalah handler untuk upload avatar
+// @Summary Upload Avatar
 func (h *userHandler) UploadAvatar(c *gin.Context) {
 	// user mengupload avatar lewat http multipart form-data
 	// handler menerima file dari user
