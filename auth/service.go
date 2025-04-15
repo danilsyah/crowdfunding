@@ -1,15 +1,17 @@
 package auth
 
 import (
+	"os"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 )
 
-var SECRET_KEY = []byte("A-Str1ng-s3cr3t-At-l3ast-256-b1ts-long")
+var SECRET_KEY = []byte(os.Getenv("JWT_SECRET"))
 
 type Service interface {
 	GenerateToken(userID int) (string, error)
+	ValidateToken(token string) (*jwt.Token, error)
 }
 
 type jwtService struct {
@@ -29,4 +31,21 @@ func (s *jwtService) GenerateToken(userID int) (string, error) {
 		return signedToken, err
 	}
 	return signedToken, nil
+}
+
+func (s *jwtService) ValidateToken(encodedToken string) (*jwt.Token, error) {
+	token, err := jwt.Parse(encodedToken, func(token *jwt.Token) (interface{}, error) {
+		_, ok := token.Method.(*jwt.SigningMethodHMAC)
+
+		if !ok {
+			return nil, jwt.NewValidationError("unexpected signing method", jwt.ValidationErrorSignatureInvalid)
+		}
+		return []byte(SECRET_KEY), nil
+	})
+
+	if err != nil {
+		return token, err
+	}
+
+	return token, nil
 }

@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -189,24 +190,35 @@ func (h *userHandler) UploadAvatar(c *gin.Context) {
 		return
 	}
 
+	// Get max file size from env
+	maxSize, err := strconv.ParseInt(os.Getenv("MAX_FILE_SIZE"), 10, 64)
+	if err != nil {
+		maxSize = 1024 * 1024 // default to 1MB if env not set
+	}
+
 	// validation file image upload size = 1 MB = 1024 * 1024 bytes
-	if file.Size > 1024*1024 {
+	if file.Size > maxSize {
 		data := gin.H{"is_uploaded": false}
 		response := helper.APIResponse("Avatar image is too large", http.StatusBadRequest, "error", data)
 		c.JSON(http.StatusBadRequest, response)
 		return
 	}
 
-	userID := 1 // ambil dari token jwt
-	// Get current avatar path
-	currentUser, err := h.userService.GetUserByID(userID)
+	currentUser := c.MustGet("currentUser").(user.User)
+	userID := currentUser.ID
 
 	// generate random file name
 	randomFileName := generateRandomString(10)
 	newFilename := fmt.Sprintf("%d_%s%d%s", userID, randomFileName, time.Now().Unix(), ext)
 
+	// Get upload path from env
+	uploadPath := os.Getenv("UPLOAD_PATH")
+	if uploadPath == "" {
+		uploadPath = "images" // default path if env not set
+	}
+
 	// Ensure images directory exists
-	if err := os.MkdirAll("images", 0755); err != nil {
+	if err := os.MkdirAll(uploadPath, 0755); err != nil {
 		data := gin.H{"is_uploaded": false}
 		response := helper.APIResponse("Failed to create upload directory", http.StatusBadRequest, "error", data)
 		c.JSON(http.StatusBadRequest, response)
@@ -223,7 +235,7 @@ func (h *userHandler) UploadAvatar(c *gin.Context) {
 	}
 
 	// Save new Avatar file
-	path := filepath.Join("images", newFilename)
+	path := filepath.Join(uploadPath, newFilename)
 	err = c.SaveUploadedFile(file, path)
 	if err != nil {
 		data := gin.H{"is_uploaded": false}
