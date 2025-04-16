@@ -52,23 +52,13 @@ func main() {
 	userRepository := user.NewRepository(db)
 	campaignRepository := campaign.NewRepository(db)
 
-	// testing repository
-	campaigns, err := campaignRepository.FindAll()
-
-	fmt.Println("debug")
-	fmt.Println("debug")
-	fmt.Println("debug")
-	fmt.Println(len(campaigns))
-	for _, c := range campaigns {
-		fmt.Println(c.Name)
-		if len(c.CampaignImages) > 0 {
-			fmt.Println(c.CampaignImages[0].FileName)
-		}
-	}
-
 	// service
 	userService := user.NewService(userRepository)
 	authService := auth.NewJWTService()
+	campaignService := campaign.NewService(campaignRepository)
+
+	campaigns, _ := campaignService.FindCampaigns(1)
+	fmt.Println(len(campaigns))
 
 	// handler
 	userHandler := handler.NewUserHandler(userService, authService)
