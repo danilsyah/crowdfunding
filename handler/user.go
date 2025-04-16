@@ -227,7 +227,7 @@ func (h *userHandler) UploadAvatar(c *gin.Context) {
 
 	// Delete old avatar file if exists
 	if err == nil && currentUser.AvatarFileName != "" {
-		oldAvatarPath := filepath.Join(currentUser.AvatarFileName)
+		oldAvatarPath := filepath.ToSlash(filepath.Join(currentUser.AvatarFileName))
 		fmt.Println("Deleting old avatar:", oldAvatarPath)
 		if _, err := os.Stat(oldAvatarPath); err == nil {
 			os.Remove(oldAvatarPath)
@@ -235,7 +235,7 @@ func (h *userHandler) UploadAvatar(c *gin.Context) {
 	}
 
 	// Save new Avatar file
-	path := filepath.Join(uploadPath, newFilename)
+	path := filepath.ToSlash(filepath.Join(uploadPath, newFilename))
 	err = c.SaveUploadedFile(file, path)
 	if err != nil {
 		data := gin.H{"is_uploaded": false}
