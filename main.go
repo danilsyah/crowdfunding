@@ -27,9 +27,16 @@ import (
 // database : simpan ke database
 func main() {
 	// gin.SetMode(gin.ReleaseMode)
+
 	// Load .env file
 	if err := godotenv.Load(); err != nil {
 		log.Printf("Warning: .env file not found")
+	}
+
+	// Get port from env or use default
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080" // default port if not specified
 	}
 	// Build database connection string from env variables
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=%s",
@@ -54,24 +61,29 @@ func main() {
 
 	// service
 	userService := user.NewService(userRepository)
-	authService := auth.NewJWTService()
 	campaignService := campaign.NewService(campaignRepository)
-
-	campaigns, _ := campaignService.FindCampaigns(1)
-	fmt.Println(len(campaigns))
+	authService := auth.NewJWTService()
 
 	// handler
 	userHandler := handler.NewUserHandler(userService, authService)
+	campaignHandler := handler.NewCampaignHandler(campaignService)
 
 	router := gin.Default()
 	api := router.Group("/api/v1")
 
+	// endpoint users
 	api.POST("/users", userHandler.RegisterUser)
 	api.POST("/sessions", userHandler.Login)
 	api.POST("/email_checkers", userHandler.CheckEmailAvailability)
 	api.POST("/avatars", authMiddleware(authService, userService), userHandler.UploadAvatar)
 
-	router.Run()
+	// endpoint campaigns
+	api.GET("/campaigns", campaignHandler.GetCampaigns)
+
+	fmt.Printf("Server starting on port :%s\n", port)
+	if err := router.Run(":" + port); err != nil {
+		log.Fatal("failed to start server:", err)
+	}
 }
 
 // ==== analisa auth middleware ====
