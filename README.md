@@ -8,3 +8,10 @@ Aplikasi Crowdfunding adalah aplikasi web penggalangan dana yang melibatkan kont
     2.  Vue NuxtJS untuk sisi frontend 
     3.  PostgreSQL untuk sisi Database
 
+
+### Restore DB pada PostgreSQL v16
+
+1. create database crowdfunding
+2. jalankan commandline restore :
+
+        $ pg_restore -h localhost -p 5432 -U postgres -d crowdfunding "db_crowfunding_20250416.sql"
