@@ -80,6 +80,7 @@ func main() {
 
 	// endpoint campaigns
 	api.GET("/campaigns", campaignHandler.GetCampaigns)
+	api.GET("/campaigns/:id", campaignHandler.GetCampaignDetail)
 
 	fmt.Printf("Server starting on port :%s\n", port)
 	if err := router.Run(":" + port); err != nil {

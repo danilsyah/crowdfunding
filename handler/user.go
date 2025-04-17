@@ -141,7 +141,7 @@ func (h *userHandler) CheckEmailAvailability(c *gin.Context) {
 
 	data := gin.H{"is_available": isEmailAvailable}
 
-	metaMessage := "Email has been available"
+	metaMessage := "Email has been used"
 	if isEmailAvailable {
 		metaMessage = "Email is available"
 	}
